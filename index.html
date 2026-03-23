@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>5th Grade Geography Game - US Capitals & Facts</title>
+    <style>
+        /* --- CSS Styling --- */
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #e0f7fa; /* Light cyan background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px 0; /* Add padding for scroll */
+            color: #004d40; /* Dark teal text */
+        }
+
+        #game-container {
+            background-color: #ffffff; /* White card background */
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+            text-align: center;
+            width: 90%;
+            max-width: 550px; /* Slightly wider for facts */
+        }
+
+        h1 {
+            color: #00796b; /* Teal heading */
+            margin-bottom: 20px;
+        }
+
+        #question-area {
+            font-size: 1.3em;
+            margin-bottom: 25px;
+            min-height: 40px; /* Prevent layout shift */
+            font-weight: bold;
+        }
+
+        #options-area {
+            display: flex;
+            flex-direction: column;
+            gap: 10px; /* Space between buttons */
+            margin-bottom: 20px;
+        }
+
+        .option-button {
+            padding: 12px 20px;
+            font-size: 1em;
+            border: 2px solid #00796b; /* Teal border */
+            background-color: #ffffff;
+            color: #00796b; /* Teal text */
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .option-button:hover:not(:disabled) {
+            background-color: #b2dfdb; /* Light teal hover */
+            color: #004d40; /* Darker teal text on hover */
+        }
+
+        .option-button:disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .correct {
+             background-color: #a5d6a7 !important; /* Light green for correct */
+             color: #1b5e20 !important; /* Dark green text */
+             border-color: #1b5e20 !important;
+        }
+
+        .incorrect {
+            background-color: #ef9a9a !important; /* Light red for incorrect */
+            color: #c62828 !important; /* Dark red text */
+            border-color: #c62828 !important;
+        }
+
+        #feedback-area {
+            font-size: 1.1em;
+            margin-top: 15px;
+            min-height: 25px; /* Prevent layout shift */
+            font-weight: bold;
+        }
+
+        /* Style for the fact area */
+        #fact-area {
+            font-size: 1em;
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #e0f2f1; /* Very light teal background */
+            border-left: 4px solid #00796b; /* Teal left border */
+            color: #004d40; /* Dark teal text */
+            text-align: left;
+            min-height: 20px; /* Prevent layout shift */
+            line-height: 1.4;
+        }
+
+         #fact-area span { /* Style for the "Fun Fact:" label */
+            font-weight: bold;
+            color: #00695c; /* Slightly darker teal */
+         }
+
+        #score-area {
+            font-size: 1.1em;
+            margin-top: 15px;
+            color: #004d40;
+        }
+
+        #start-button, #next-button, #restart-button {
+            padding: 12px 25px;
+            font-size: 1.1em;
+            background-color: #00796b; /* Teal */
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background-color 0.3s;
+        }
+
+        #start-button:hover, #next-button:hover, #restart-button:hover {
+            background-color: #004d40; /* Darker teal on hover */
+        }
+
+        /* Initially hide game elements */
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <h1>US States, Capitals & Facts Quiz!</h1>
+
+        <!-- Initial Start Screen -->
+        <div id="start-screen">
+            <p>Ready to test your knowledge of US capitals and learn fun facts?</p>
+            <button id="start-button">Start Game</button>
+        </div>
+
+        <!-- Main Game Screen (Hidden initially) -->
+        <div id="game-screen" class="hidden">
+            <div id="score-area">Score: 0 / 0</div>
+            <div id="question-area">Loading question...</div>
+            <div id="options-area">
+                <!-- Option buttons will be added here by JS -->
+            </div>
+            <div id="feedback-area"></div>
+            <div id="fact-area" class="hidden"></div> <!-- Added Fact Area -->
+            <button id="next-button" class="hidden">Next Question</button>
+        </div>
+
+         <!-- Final Score Screen (Hidden initially) -->
+         <div id="end-screen" class="hidden">
+             <h2>Game Over!</h2>
+             <div id="final-score">Your final score is: 0 / 0</div>
+             <p id="final-message">Well done!</p>
+             <button id="restart-button">Play Again?</button>
+         </div>
+    </div>
+
+    <!-- ========================= -->
+    <!-- JavaScript Block 1: Data  -->
+    <!-- ========================= -->
+    <script>
+        // Updated data with facts
+        const statesAndCapitals = [
+            { state: "Alabama", capital: "Montgomery", fact: "Known as the 'Heart of Dixie', Alabama played a key role in the American Civil Rights Movement." },
+            { state: "Alaska", capital: "Juneau", fact: "The largest state by area in the US, known for its vast wilderness and northern lights." },
+            { state: "Arizona", capital: "Phoenix", fact: "Home to the Grand Canyon, one of the Seven Natural Wonders of the World." },
+            { state: "Arkansas", capital: "Little Rock", fact: "Has the only active diamond mine in the United States where the public can search for diamonds." },
+            { state: "California", capital: "Sacramento", fact: "The most populous state in the US and famous for Hollywood, tech innovation (Silicon Valley), and national parks like Yosemite." },
+            { state: "Colorado", capital: "Denver", fact: "Has the highest average elevation of any state and is known for the Rocky Mountains and skiing." },
+            { state: "Connecticut", capital: "Hartford", fact: "Known as the 'Constitution State' because its 'Fundamental Orders' were a basis for the US Constitution." },
+            { state: "Delaware", capital: "Dover", fact: "Called the 'First State' because it was the first of the 13 original states to ratify the U.S. Constitution." },
+            { state: "Florida", capital: "Tallahassee", fact: "Has the longest coastline in the contiguous United States and is famous for its theme parks and beaches." },
+            { state: "Georgia", capital: "Atlanta", fact: "The largest state east of the Mississippi River by land area and famous for its peaches and Coca-Cola." },
+            { state: "Hawaii", capital: "Honolulu", fact: "The only U.S. state made up entirely of islands and known for its active volcanoes and unique Polynesian culture." },
+            { state: "Idaho", capital: "Boise", fact: "Famous worldwide for its potatoes, producing about one-third of the potatoes grown in the U.S." },
+            { state: "Illinois", capital: "Springfield", fact: "Known as the 'Land of Lincoln' as Abraham Lincoln spent much of his life here before becoming president." },
+            { state: "Indiana", capital: "Indianapolis", fact: "Home to the Indianapolis Motor Speedway, which hosts the famous Indy 500 auto race." },
+            { state: "Iowa", capital: "Des Moines", fact: "A leading state in agriculture, especially known for its corn production." },
+            { state: "Kansas", capital: "Topeka", fact: "Located near the geographic center of the contiguous US and often associated with 'The Wizard of Oz'." },
+            { state: "Kentucky", capital: "Frankfort", fact: "Famous for the Kentucky Derby horse race, bluegrass music, and bourbon whiskey." },
+            { state: "Louisiana", capital: "Baton Rouge", fact: "Known for its unique Cajun and Creole cultures, jazz music, and the Mardi Gras festival in New Orleans." },
+            { state: "Maine", capital: "Augusta", fact: "Famous for its rocky coastline, lobster fishing, and being the easternmost state in the U.S." },
+            { state: "Maryland", capital: "Annapolis", fact: "Home to the United States Naval Academy and known for its blue crabs." },
+            { state: "Massachusetts", capital: "Boston", fact: "Played a crucial role in early American history, site of the Pilgrims' landing at Plymouth Rock and the Boston Tea Party." },
+            { state: "Michigan", capital: "Lansing", fact: "Surrounded by four of the five Great Lakes and known as the center of the U.S. automotive industry ('Motor City')." },
+            { state: "Minnesota", capital: "Saint Paul", fact: "Called the 'Land of 10,000 Lakes' (though it actually has more!), known for its natural beauty and cold winters." },
+            { state: "Mississippi", capital: "Jackson", fact: "Named after the Mississippi River, which forms its western boundary, and known as the birthplace of blues music." },
+            { state: "Missouri", capital: "Jefferson City", fact: "Home to the Gateway Arch in St. Louis, often called the 'Gateway to the West'." },
+            { state: "Montana", capital: "Helena", fact: "Known as 'Big Sky Country' for its wide-open spaces and home to Glacier National Park." },
+            { state: "Nebraska", capital: "Lincoln", fact: "Home to the largest underground water reserve in the US, the Ogallala Aquifer, vital for agriculture." },
+            { state: "Nevada", capital: "Carson City", fact: "Mostly desert terrain, famous for the entertainment city of Las Vegas and Hoover Dam." },
+            { state: "New Hampshire", capital: "Concord", fact: "Has the motto 'Live Free or Die' and holds the first primary election in the U.S. presidential race." },
+            { state: "New Jersey", capital: "Trenton", fact: "The most densely populated state in the U.S., famous for its diners and Atlantic City boardwalk." },
+            { state: "New Mexico", capital: "Santa Fe", fact: "Has the oldest capital city in the U.S. (Santa Fe) and a rich history blending Native American, Hispanic, and Anglo cultures." },
+            { state: "New York", capital: "Albany", fact: "Home to New York City, the Statue of Liberty, Niagara Falls, and the Adirondack Mountains." },
+            { state: "North Carolina", capital: "Raleigh", fact: "Site of the Wright Brothers' first successful airplane flight at Kitty Hawk." },
+            { state: "North Dakota", capital: "Bismarck", fact: "Features Theodore Roosevelt National Park, named after the president who ranched there." },
+            { state: "Ohio", capital: "Columbus", fact: "Known as the 'Birthplace of Aviation' (Wright brothers were from here) and home to many astronauts, including Neil Armstrong." },
+            { state: "Oklahoma", capital: "Oklahoma City", fact: "Has a large Native American population and significant stretches of the historic Route 66." },
+            { state: "Oregon", capital: "Salem", fact: "Home to Crater Lake, the deepest lake in the U.S., and known for its scenic coastline and forests." },
+            { state: "Pennsylvania", capital: "Harrisburg", fact: "Home to the Liberty Bell and Independence Hall in Philadelphia, where the Declaration of Independence and Constitution were signed." },
+            { state: "Rhode Island", capital: "Providence", fact: "The smallest U.S. state by area, but known for its beautiful coastline and colonial history." },
+            { state: "South Carolina", capital: "Columbia", fact: "Site of Fort Sumter, where the first shots of the Civil War were fired, and known for its historic cities and beaches." },
+            { state: "South Dakota", capital: "Pierre", fact: "Famous for Mount Rushmore National Memorial, featuring the carved faces of four U.S. Presidents." },
+            { state: "Tennessee", capital: "Nashville", fact: "Considered the capital of country music (Nashville) and home to the Great Smoky Mountains National Park." },
+            { state: "Texas", capital: "Austin", fact: "The largest state by area in the contiguous U.S., known for the Alamo, cowboys, and oil industry." },
+            { state: "Utah", capital: "Salt Lake City", fact: "Home to the Great Salt Lake and famous for its stunning national parks like Zion, Bryce Canyon, and Arches." },
+            { state: "Vermont", capital: "Montpelier", fact: "Famous for its maple syrup production, beautiful fall foliage, and the Green Mountains." },
+            { state: "Virginia", capital: "Richmond", fact: "Called the 'Mother of Presidents' because eight U.S. presidents were born here; also home to the first permanent English settlement at Jamestown." },
+            { state: "Washington", capital: "Olympia", fact: "Home to Mount Rainier, the Cascade Mountains, and known for its coffee culture (Starbucks originated in Seattle)." },
+            { state: "West Virginia", capital: "Charleston", fact: "Located entirely within the Appalachian Mountain region and known for its coal mining history." },
+            { state: "Wisconsin", capital: "Madison", fact: "Known as 'America's Dairyland' due to its large production of cheese and dairy products." },
+            { state: "Wyoming", capital: "Cheyenne", fact: "Home to most of Yellowstone National Park and the least populous state in the U.S." }
+        ];
+
+        const NUM_QUESTIONS_PER_GAME = 20; // Increased number of questions
+        const NUM_OPTIONS = 4; // How many choices for each question
+    </script>
+
+    <!-- ============================= -->
+    <!-- JavaScript Block 2: Game Logic -->
+    <!-- ============================= -->
+    <script>
+        let currentQuestionData = null;
+        let score = 0;
+        let questionsAsked = 0;
+        let shuffledData = [];
+        let currentQuestionIndex = 0; // Index into shuffledData
+        let questionType = 'capital'; // 'capital' or 'state'
+
+        // Fisher-Yates (Knuth) Shuffle Algorithm
+        function shuffleArray(array) {
+            let currentIndex = array.length, randomIndex;
+            while (currentIndex !== 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [
+                    array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        }
+
+        function startGame() {
+            score = 0;
+            questionsAsked = 0;
+            currentQuestionIndex = 0;
+            // Shuffle a copy of the data for this game round
+            shuffledData = shuffleArray([...statesAndCapitals]);
+             // Ensure we don't ask for more questions than available states
+            const totalQuestions = Math.min(NUM_QUESTIONS_PER_GAME, shuffledData.length);
+
+            updateScoreDisplay(totalQuestions); // Update score initially (0 / total)
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+             // Reset fact area visibility for the new question
+            factArea.classList.add('hidden');
+            factArea.innerHTML = ''; // Clear previous fact content
+
+            if (currentQuestionIndex >= shuffledData.length || questionsAsked >= NUM_QUESTIONS_PER_GAME) {
+                endGame();
+                return;
+            }
+
+            currentQuestionData = shuffledData[currentQuestionIndex];
+            questionsAsked++;
+            updateScoreDisplay(Math.min(NUM_QUESTIONS_PER_GAME, shuffledData.length)); // Update total number of questions
+
+            // Randomly decide question type
+            questionType = Math.random() < 0.5 ? 'capital' : 'state';
+
+            let questionText = "";
+            let correctAnswer = "";
+            let options = [];
+
+            if (questionType === 'capital') {
+                // Ask for the capital
+                questionText = `What is the capital of ${currentQuestionData.state}?`;
+                correctAnswer = currentQuestionData.capital;
+                options.push(correctAnswer);
+                // Get wrong capitals
+                let wrongOptions = getAllCapitals().filter(c => c !== correctAnswer);
+                shuffleArray(wrongOptions);
+                options = options.concat(wrongOptions.slice(0, NUM_OPTIONS - 1));
+            } else {
+                // Ask for the state
+                questionText = `Which state has the capital ${currentQuestionData.capital}?`;
+                correctAnswer = currentQuestionData.state;
+                options.push(correctAnswer);
+                 // Get wrong states
+                let wrongOptions = getAllStates().filter(s => s !== correctAnswer);
+                shuffleArray(wrongOptions);
+                options = options.concat(wrongOptions.slice(0, NUM_OPTIONS - 1));
+            }
+
+             // Shuffle the final options
+            shuffleArray(options);
+
+            // Display the question and options (handled in UI interaction script)
+            displayQuestionAndOptions(questionText, options);
+
+            // Hide the 'Next' button until an answer is selected
+            nextButton.classList.add('hidden');
+        }
+
+         // Helper functions to get all states or capitals for generating wrong answers
+         function getAllCapitals() {
+            return statesAndCapitals.map(item => item.capital);
+         }
+         function getAllStates() {
+             return statesAndCapitals.map(item => item.state);
+         }
+
+        function checkAnswer(selectedOptionText, buttonElement) {
+            // Disable all option buttons after selection
+            disableOptions();
+
+            let isCorrect = false;
+            if (questionType === 'capital' && selectedOptionText === currentQuestionData.capital) {
+                isCorrect = true;
+            } else if (questionType === 'state' && selectedOptionText === currentQuestionData.state) {
+                isCorrect = true;
+            }
+
+            let correctAnswerText = (questionType === 'capital') ? currentQuestionData.capital : currentQuestionData.state;
+
+            if (isCorrect) {
+                score++;
+                showFeedback(true, "Correct!", buttonElement);
+            } else {
+                showFeedback(false, `Incorrect. The answer was ${correctAnswerText}.`, buttonElement);
+            }
+
+             updateScoreDisplay(Math.min(NUM_QUESTIONS_PER_GAME, shuffledData.length));
+
+            // Display the fact
+            displayFact(currentQuestionData.fact);
+
+            // Show the 'Next' button
+             nextButton.classList.remove('hidden');
+
+             currentQuestionIndex++; // Move to the next item in shuffledData for the next round
+        }
+
+        function disableOptions() {
+             const buttons = optionsArea.querySelectorAll('.option-button');
+             buttons.forEach(button => {
+                button.disabled = true;
+             });
+        }
+
+        function updateScoreDisplay(totalQuestions) {
+            // Only display totalQuestions once game starts asking
+             const displayTotal = questionsAsked > 0 ? totalQuestions : NUM_QUESTIONS_PER_GAME;
+             scoreArea.textContent = `Score: ${score} / ${questionsAsked} (of ${displayTotal})`;
+        }
+
+        function showFeedback(isCorrect, message, clickedButton) {
+             feedbackArea.textContent = message;
+             feedbackArea.style.color = isCorrect ? '#1b5e20' : '#c62828'; // Green for correct, Red for incorrect
+
+            // Highlight the clicked button and the correct one if wrong
+            if (isCorrect) {
+                clickedButton.classList.add('correct');
+            } else {
+                clickedButton.classList.add('incorrect');
+                 // Find and highlight the correct button
+                 const buttons = optionsArea.querySelectorAll('.option-button');
+                 let correctAnswerText = (questionType === 'capital') ? currentQuestionData.capital : currentQuestionData.state;
+                 buttons.forEach(button => {
+                     if (button.textContent === correctAnswerText) {
+                         button.classList.add('correct');
+                     }
+                 });
+            }
+        }
+
+        // Function to display the fact
+        function displayFact(factText) {
+             if (factText && factArea) {
+                 factArea.innerHTML = `<span>Fun Fact:</span> ${factText}`; // Add label
+                 factArea.classList.remove('hidden');
+             } else if (factArea) {
+                 factArea.classList.add('hidden'); // Hide if no fact provided
+             }
+        }
+
+        function endGame() {
+            gameScreen.classList.add('hidden');
+            endScreen.classList.remove('hidden');
+            const totalQuestions = Math.min(NUM_QUESTIONS_PER_GAME, shuffledData.length);
+            finalScoreDisplay.textContent = `Your final score is: ${score} / ${totalQuestions}`;
+
+            let message = "";
+            const percentage = totalQuestions > 0 ? (score / totalQuestions) * 100 : 0;
+             if (percentage === 100) {
+                 message = "Perfect score! You're a geography master!";
+             } else if (percentage >= 90) {
+                message = "Excellent! You really know your states and capitals!";
+            } else if (percentage >= 70) {
+                message = "Great job! Very impressive knowledge!";
+            } else if (percentage >= 50) {
+                message = "Good effort! Keep practicing and learning those facts!";
+            } else {
+                message = "Keep trying! Geography takes practice.";
+            }
+            finalMessageDisplay.textContent = message;
+        }
+
+    </script>
+
+    <!-- ========================================= -->
+    <!-- JavaScript Block 3: UI Interaction & Init -->
+    <!-- ========================================= -->
+    <script>
+        // Get references to HTML elements
+        const startScreen = document.getElementById('start-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const endScreen = document.getElementById('end-screen');
+
+        const startButton = document.getElementById('start-button');
+        const restartButton = document.getElementById('restart-button');
+        const nextButton = document.getElementById('next-button');
+
+        const questionArea = document.getElementById('question-area');
+        const optionsArea = document.getElementById('options-area');
+        const feedbackArea = document.getElementById('feedback-area');
+        const factArea = document.getElementById('fact-area'); // Get reference to fact area
+        const scoreArea = document.getElementById('score-area');
+
+        const finalScoreDisplay = document.getElementById('final-score');
+        const finalMessageDisplay = document.getElementById('final-message');
+
+
+        // --- UI Update Functions ---
+        function displayQuestionAndOptions(questionText, options) {
+            questionArea.textContent = questionText;
+            optionsArea.innerHTML = ''; // Clear previous options
+            feedbackArea.textContent = ''; // Clear previous feedback
+            feedbackArea.style.color = 'inherit'; // Reset feedback color
+            factArea.classList.add('hidden'); // Hide fact area for new question
+            factArea.innerHTML = ''; // Clear fact text
+
+            options.forEach(option => {
+                const button = document.createElement('button');
+                button.textContent = option;
+                button.classList.add('option-button');
+                button.addEventListener('click', () => handleOptionClick(option, button));
+                optionsArea.appendChild(button);
+            });
+        }
+
+        function handleOptionClick(selectedOptionText, buttonElement) {
+            checkAnswer(selectedOptionText, buttonElement);
+        }
+
+        // --- Event Listeners ---
+        startButton.addEventListener('click', () => {
+            startScreen.classList.add('hidden');
+            endScreen.classList.add('hidden'); // Hide end screen if restarting
+            gameScreen.classList.remove('hidden');
+            startGame();
+        });
+
+        nextButton.addEventListener('click', () => {
+             loadQuestion();
+        });
+
+         restartButton.addEventListener('click', () => {
+             startScreen.classList.add('hidden');
+             endScreen.classList.add('hidden');
+             gameScreen.classList.remove('hidden');
+             startGame(); // Re-initialize and start the game
+         });
+
+         // Initial setup: Show only the start screen
+         // (Handled by CSS 'hidden' class initially)
+
+    </script>
+
+</body>
+</html>
